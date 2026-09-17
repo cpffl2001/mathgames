@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,190 +25,93 @@
     justify-content: center;
     padding: 24px 14px 60px;
   }
-  .wrap {
-    max-width: 640px;
-    width: 100%;
-  }
-  header {
-    text-align: center;
-    margin-bottom: 18px;
-  }
-  header h1 {
-    color: var(--navy);
-    font-size: 1.7rem;
-    margin: 0 0 4px;
-  }
-  header p {
-    margin: 0;
-    color: #444;
-    font-size: 1rem;
-  }
+  .wrap { max-width: 640px; width: 100%; }
+  header { text-align: center; margin-bottom: 18px; }
+  header h1 { color: var(--navy); font-size: 1.7rem; margin: 0 0 4px; }
+  header p { margin: 0; color: #444; font-size: 1rem; }
   .progress-track {
-    background: #ddd;
-    border-radius: 20px;
-    height: 10px;
-    width: 100%;
-    margin: 14px 0 22px;
-    overflow: hidden;
+    background: #ddd; border-radius: 20px; height: 10px; width: 100%;
+    margin: 14px 0 22px; overflow: hidden;
   }
-  .progress-fill {
-    background: var(--orange);
-    height: 100%;
-    width: 0%;
-    transition: width 0.4s ease;
-  }
+  .progress-fill { background: var(--orange); height: 100%; width: 0%; transition: width 0.4s ease; }
   .card {
-    background: var(--light-bg);
-    border: 2px solid var(--navy);
-    border-radius: var(--card-radius);
-    padding: 22px 22px 26px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    background: var(--light-bg); border: 2px solid var(--navy); border-radius: var(--card-radius);
+    padding: 22px 22px 26px; box-shadow: 0 4px 14px rgba(0,0,0,0.08);
   }
-  .speaker {
-    font-weight: 700;
-    color: var(--navy);
-    margin-bottom: 2px;
-    font-size: 0.95rem;
-  }
-  .line {
-    font-size: 1.12rem;
-    line-height: 1.5;
-    margin: 0 0 14px;
-  }
+  .speaker { font-weight: 700; color: var(--navy); margin-bottom: 2px; font-size: 0.95rem; }
+  .line { font-size: 1.12rem; line-height: 1.5; margin: 0 0 14px; }
   .line:last-of-type { margin-bottom: 0; }
-  .scene-img {
-    text-align: center;
-    font-size: 3rem;
-    margin-bottom: 10px;
-  }
-  .question-box {
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 2px dashed #c7cbd1;
-  }
-  .question-box p {
-    font-weight: 700;
-    font-size: 1.05rem;
-    margin: 0 0 12px;
-    color: var(--navy);
-  }
-  .choices {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+  .scene-img { text-align: center; font-size: 3rem; margin-bottom: 10px; }
+  .question-box { margin-top: 20px; padding-top: 16px; border-top: 2px dashed #c7cbd1; }
+  .question-box p { font-weight: 700; font-size: 1.05rem; margin: 0 0 12px; color: var(--navy); }
+  .choices { display: flex; flex-direction: column; gap: 10px; }
   button.choice {
-    text-align: left;
-    font-size: 1rem;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 2px solid var(--navy);
-    background: white;
-    color: var(--text-dark);
-    cursor: pointer;
-    transition: transform 0.1s ease, background 0.2s ease;
+    text-align: left; font-size: 1rem; padding: 12px 14px; border-radius: 10px;
+    border: 2px solid var(--navy); background: white; color: var(--text-dark);
+    cursor: pointer; transition: transform 0.1s ease, background 0.2s ease;
   }
-  button.choice:hover:not(:disabled) {
-    background: #eaf0ff;
-  }
-  button.choice:focus-visible {
-    outline: 3px solid var(--orange);
-    outline-offset: 2px;
-  }
-  button.choice:disabled {
-    cursor: default;
-  }
-  button.choice.correct {
-    background: #e4f5e4;
-    border-color: var(--green-ok);
-    color: var(--green-ok);
-    font-weight: 700;
-  }
-  button.choice.incorrect {
-    background: #fbe6e4;
-    border-color: var(--red-no);
-    color: var(--red-no);
-  }
+  button.choice:hover:not(:disabled) { background: #eaf0ff; }
+  button.choice:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  button.choice:disabled { cursor: default; }
+  button.choice.correct { background: #e4f5e4; border-color: var(--green-ok); color: var(--green-ok); font-weight: 700; }
+  button.choice.incorrect { background: #fbe6e4; border-color: var(--red-no); color: var(--red-no); }
   .feedback {
-    margin-top: 14px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    font-size: 0.98rem;
-    line-height: 1.45;
-    display: none;
+    margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-size: 0.98rem;
+    line-height: 1.45; display: none;
   }
   .feedback.show { display: block; }
-  .feedback.right {
-    background: #e4f5e4;
-    color: var(--green-ok);
-    border: 2px solid var(--green-ok);
-  }
-  .feedback.wrong {
-    background: #fbe6e4;
-    color: var(--red-no);
-    border: 2px solid var(--red-no);
-  }
+  .feedback.right { background: #e4f5e4; color: var(--green-ok); border: 2px solid var(--green-ok); }
+  .feedback.wrong { background: #fbe6e4; color: var(--red-no); border: 2px solid var(--red-no); }
   .continue-btn {
-    margin-top: 18px;
-    display: none;
-    width: 100%;
-    padding: 13px;
-    font-size: 1.05rem;
-    font-weight: 700;
-    background: var(--orange);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
+    margin-top: 18px; display: none; width: 100%; padding: 13px; font-size: 1.05rem;
+    font-weight: 700; background: var(--orange); color: white; border: none; border-radius: 10px; cursor: pointer;
   }
   .continue-btn.show { display: block; }
   .continue-btn:hover { background: #a34a00; }
-  .continue-btn:focus-visible {
-    outline: 3px solid var(--navy);
-    outline-offset: 2px;
-  }
-  .final-card {
-    text-align: center;
-  }
-  .final-card h2 {
-    color: var(--navy);
-    margin-top: 0;
-  }
-  .score-display {
-    font-size: 2.4rem;
-    font-weight: 800;
-    color: var(--orange);
-    margin: 10px 0;
-  }
+  .continue-btn:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }
+  .final-card { text-align: center; }
+  .final-card h2 { color: var(--navy); margin-top: 0; }
+  .score-display { font-size: 2.4rem; font-weight: 800; color: var(--orange); margin: 10px 0; }
   .moral {
-    background: #fff3e8;
-    border: 2px solid var(--orange);
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-style: italic;
-    margin: 18px 0;
-    color: #6b3600;
+    background: #fff3e8; border: 2px solid var(--orange); border-radius: 10px;
+    padding: 14px 16px; font-style: italic; margin: 18px 0; color: #6b3600;
   }
-  .restart-btn {
-    padding: 12px 26px;
-    font-size: 1rem;
-    font-weight: 700;
-    background: var(--navy);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
+  .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .restart-btn, .leaderboard-btn {
+    padding: 12px 22px; font-size: 1rem; font-weight: 700; color: white;
+    border: none; border-radius: 10px; cursor: pointer;
   }
+  .restart-btn { background: var(--navy); }
   .restart-btn:hover { background: #001f5c; }
-  .sr-only {
-    position: absolute;
-    width: 1px; height: 1px;
-    padding: 0; margin: -1px;
-    overflow: hidden;
-    clip: rect(0,0,0,0);
-    white-space: nowrap; border: 0;
+  .leaderboard-btn { background: var(--orange); }
+  .leaderboard-btn:hover { background: #a34a00; }
+  .leaderboard-btn:disabled { background: #c9c9c9; cursor: default; }
+  .name-input {
+    width: 100%; padding: 12px 14px; font-size: 1.05rem; border-radius: 10px;
+    border: 2px solid var(--navy); margin-bottom: 14px; font-family: inherit;
   }
+  .name-input:focus-visible { outline: 3px solid var(--orange); outline-offset: 1px; }
+  .start-btn {
+    width: 100%; padding: 13px; font-size: 1.05rem; font-weight: 700;
+    background: var(--orange); color: white; border: none; border-radius: 10px; cursor: pointer;
+  }
+  .start-btn:hover { background: #a34a00; }
+  .start-btn:disabled { background: #c9c9c9; cursor: default; }
+  .lb-table { width: 100%; border-collapse: collapse; margin-top: 12px; text-align: left; }
+  .lb-table th, .lb-table td { padding: 8px 10px; border-bottom: 1px solid #d7dbe0; font-size: 0.95rem; }
+  .lb-table th { color: var(--navy); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .lb-table tr.me { background: #fff3e8; font-weight: 700; }
+  .lb-note { font-size: 0.85rem; color: #666; margin-top: 10px; }
+  .back-btn {
+    margin-top: 16px; padding: 10px 20px; font-size: 0.95rem; font-weight: 700;
+    background: white; color: var(--navy); border: 2px solid var(--navy); border-radius: 10px; cursor: pointer;
+  }
+  .back-btn:hover { background: #eaf0ff; }
   #liveRegion { position: absolute; left: -9999px; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
 </style>
 </head>
 <body>
@@ -332,16 +236,69 @@
   let current = 0;
   let score = 0;
   let answered = false;
+  let playerName = "";
+  let startTime = 0;
+  let savedDocId = null;
+  let dbNamespace = undefined; // undefined = not yet checked, null = unavailable
 
   const gameCard = document.getElementById('gameCard');
   const progressFill = document.getElementById('progressFill');
   const progressBar = document.getElementById('progressBar');
   const liveRegion = document.getElementById('liveRegion');
 
+  async function getDb() {
+    if (dbNamespace !== undefined) return dbNamespace;
+    try {
+      if (window.claude && typeof window.claude.use === 'function') {
+        dbNamespace = await window.claude.use('db');
+      } else {
+        dbNamespace = null;
+      }
+    } catch (e) {
+      dbNamespace = null;
+    }
+    return dbNamespace;
+  }
+  // Kick off the check early so it's likely resolved by game end.
+  getDb();
+
   function updateProgress() {
     const pct = Math.round((current / scenes.length) * 100);
     progressFill.style.width = pct + '%';
     progressBar.setAttribute('aria-valuenow', pct);
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function renderNameScreen() {
+    gameCard.innerHTML = `
+      <div class="scene-img" aria-hidden="true">✈️</div>
+      <p class="line">Before you touch down in France with Lena and Jake, tell us who's playing \u2014 your name will appear on the leaderboard at the end.</p>
+      <label for="nameInput" class="sr-only">Your name</label>
+      <input type="text" id="nameInput" class="name-input" placeholder="Enter your name" maxlength="24" autocomplete="off">
+      <button class="start-btn" id="startBtn">Start the Story \u2192</button>
+    `;
+    const input = document.getElementById('nameInput');
+    const startBtn = document.getElementById('startBtn');
+    input.focus();
+    function tryStart() {
+      const val = input.value.trim();
+      if (!val) {
+        input.focus();
+        return;
+      }
+      playerName = val.slice(0, 24);
+      startTime = Date.now();
+      renderScene(current);
+    }
+    startBtn.addEventListener('click', tryStart);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') tryStart();
+    });
   }
 
   function renderScene(index) {
@@ -417,6 +374,24 @@
     }
   }
 
+  async function saveScoreToLeaderboard() {
+    const db = await getDb();
+    if (!db) return null;
+    const ms = Date.now() - startTime;
+    try {
+      const ref = await db.collection('scores').add({
+        name: playerName || 'Anonymous',
+        score: score,
+        total: scenes.length,
+        ms: ms,
+        createdAt: Date.now()
+      });
+      return ref.id;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function renderFinal() {
     updateProgress();
     progressFill.style.width = '100%';
@@ -435,22 +410,118 @@
     gameCard.innerHTML = `
       <div class="final-card">
         <div class="scene-img" aria-hidden="true">🏆</div>
-        <h2>Trip Complete!</h2>
+        <h2>Trip Complete, ${escapeHtml(playerName || 'Traveler')}!</h2>
         <div class="score-display">${score} / ${total}</div>
         <p>${message}</p>
         <div class="moral">Moral: Know your units\u2014or prepare to overheat!</div>
-        <button class="restart-btn" id="restartBtn">Play Again</button>
+        <div class="btn-row">
+          <button class="leaderboard-btn" id="leaderboardBtn" disabled>Checking leaderboard\u2026</button>
+          <button class="restart-btn" id="restartBtn">Play Again</button>
+        </div>
       </div>
     `;
+    liveRegion.textContent = `Story complete. Final score ${score} out of ${total}. ${message}`;
+
     document.getElementById('restartBtn').addEventListener('click', () => {
       current = 0;
       score = 0;
-      renderScene(current);
+      savedDocId = null;
+      renderNameScreen();
     });
-    liveRegion.textContent = `Story complete. Final score ${score} out of ${total}. ${message}`;
+
+    const lbBtn = document.getElementById('leaderboardBtn');
+
+    (async () => {
+      savedDocId = await saveScoreToLeaderboard();
+      const db = await getDb();
+      if (db) {
+        lbBtn.disabled = false;
+        lbBtn.textContent = 'View Leaderboard';
+        lbBtn.addEventListener('click', renderLeaderboard);
+      } else {
+        lbBtn.textContent = 'Leaderboard unavailable here';
+      }
+    })();
   }
 
-  renderScene(current);
+  async function renderLeaderboard() {
+    gameCard.innerHTML = `
+      <div class="final-card">
+        <div class="scene-img" aria-hidden="true">📊</div>
+        <h2>Leaderboard</h2>
+        <p id="lbStatus">Loading scores\u2026</p>
+      </div>
+    `;
+    const db = await getDb();
+    const statusEl = document.getElementById('lbStatus');
+    if (!db) {
+      statusEl.textContent = 'The leaderboard is not available in this view.';
+      appendBackButton();
+      return;
+    }
+    try {
+      const snap = await db.collection('scores').orderBy('score', 'desc').limit(200).get();
+      let rows = snap.docs.map(d => {
+        const data = d.data() || {};
+        return {
+          id: d.id,
+          name: typeof data.name === 'string' ? data.name : 'Anonymous',
+          score: typeof data.score === 'number' ? data.score : 0,
+          total: typeof data.total === 'number' ? data.total : scenes.length,
+          ms: typeof data.ms === 'number' ? data.ms : Number.MAX_SAFE_INTEGER
+        };
+      });
+      rows.sort((a, b) => (b.score - a.score) || (a.ms - b.ms));
+
+      if (rows.length === 0) {
+        statusEl.textContent = 'No scores yet \u2014 you\u2019re the first!';
+        appendBackButton();
+        return;
+      }
+
+      let myRank = null;
+      const rowsHtml = rows.map((r, i) => {
+        const rank = i + 1;
+        const isMe = savedDocId && r.id === savedDocId;
+        if (isMe) myRank = rank;
+        const seconds = (r.ms / 1000).toFixed(1);
+        return `<tr class="${isMe ? 'me' : ''}">
+          <td>#${rank}</td>
+          <td>${escapeHtml(r.name)}${isMe ? ' (you)' : ''}</td>
+          <td>${r.score}/${r.total}</td>
+          <td>${seconds}s</td>
+        </tr>`;
+      }).join('');
+
+      statusEl.textContent = myRank
+        ? `You placed #${myRank} out of ${rows.length}!`
+        : `Showing all ${rows.length} scores.`;
+
+      gameCard.innerHTML += `
+        <table class="lb-table" aria-label="Leaderboard standings">
+          <thead>
+            <tr><th>Rank</th><th>Name</th><th>Score</th><th>Time</th></tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <p class="lb-note">Ranked by score, then by fastest completion time.</p>
+      `;
+      appendBackButton();
+    } catch (e) {
+      statusEl.textContent = 'Could not load the leaderboard right now.';
+      appendBackButton();
+    }
+  }
+
+  function appendBackButton() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'final-card';
+    wrapper.innerHTML = `<button class="back-btn" id="backBtn">\u2190 Back to Results</button>`;
+    gameCard.querySelector('.final-card').appendChild(wrapper.firstElementChild);
+    document.getElementById('backBtn').addEventListener('click', renderFinal);
+  }
+
+  renderNameScreen();
 </script>
 </body>
 </html>
