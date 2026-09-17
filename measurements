@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lost in Translation: A Unit Conversion Story</title>
+<style>
+  :root {
+    --navy: #003087;
+    --orange: #BF5700;
+    --light-bg: rgba(247, 248, 247, 1);
+    --text-dark: #1a1a1a;
+    --green-ok: #1e6b1e;
+    --red-no: #a3231a;
+    --card-radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(180deg, #f7f8f7 0%, #eef1f6 100%);
+    color: var(--text-dark);
+    display: flex;
+    justify-content: center;
+    padding: 24px 14px 60px;
+  }
+  .wrap {
+    max-width: 640px;
+    width: 100%;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  header h1 {
+    color: var(--navy);
+    font-size: 1.7rem;
+    margin: 0 0 4px;
+  }
+  header p {
+    margin: 0;
+    color: #444;
+    font-size: 1rem;
+  }
+  .progress-track {
+    background: #ddd;
+    border-radius: 20px;
+    height: 10px;
+    width: 100%;
+    margin: 14px 0 22px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    background: var(--orange);
+    height: 100%;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .card {
+    background: var(--light-bg);
+    border: 2px solid var(--navy);
+    border-radius: var(--card-radius);
+    padding: 22px 22px 26px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  }
+  .speaker {
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 2px;
+    font-size: 0.95rem;
+  }
+  .line {
+    font-size: 1.12rem;
+    line-height: 1.5;
+    margin: 0 0 14px;
+  }
+  .line:last-of-type { margin-bottom: 0; }
+  .scene-img {
+    text-align: center;
+    font-size: 3rem;
+    margin-bottom: 10px;
+  }
+  .question-box {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px dashed #c7cbd1;
+  }
+  .question-box p {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 0 0 12px;
+    color: var(--navy);
+  }
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  button.choice {
+    text-align: left;
+    font-size: 1rem;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 2px solid var(--navy);
+    background: white;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: transform 0.1s ease, background 0.2s ease;
+  }
+  button.choice:hover:not(:disabled) {
+    background: #eaf0ff;
+  }
+  button.choice:focus-visible {
+    outline: 3px solid var(--orange);
+    outline-offset: 2px;
+  }
+  button.choice:disabled {
+    cursor: default;
+  }
+  button.choice.correct {
+    background: #e4f5e4;
+    border-color: var(--green-ok);
+    color: var(--green-ok);
+    font-weight: 700;
+  }
+  button.choice.incorrect {
+    background: #fbe6e4;
+    border-color: var(--red-no);
+    color: var(--red-no);
+  }
+  .feedback {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 0.98rem;
+    line-height: 1.45;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.right {
+    background: #e4f5e4;
+    color: var(--green-ok);
+    border: 2px solid var(--green-ok);
+  }
+  .feedback.wrong {
+    background: #fbe6e4;
+    color: var(--red-no);
+    border: 2px solid var(--red-no);
+  }
+  .continue-btn {
+    margin-top: 18px;
+    display: none;
+    width: 100%;
+    padding: 13px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    background: var(--orange);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .continue-btn.show { display: block; }
+  .continue-btn:hover { background: #a34a00; }
+  .continue-btn:focus-visible {
+    outline: 3px solid var(--navy);
+    outline-offset: 2px;
+  }
+  .final-card {
+    text-align: center;
+  }
+  .final-card h2 {
+    color: var(--navy);
+    margin-top: 0;
+  }
+  .score-display {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: var(--orange);
+    margin: 10px 0;
+  }
+  .moral {
+    background: #fff3e8;
+    border: 2px solid var(--orange);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-style: italic;
+    margin: 18px 0;
+    color: #6b3600;
+  }
+  .restart-btn {
+    padding: 12px 26px;
+    font-size: 1rem;
+    font-weight: 700;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .restart-btn:hover { background: #001f5c; }
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap; border: 0;
+  }
+  #liveRegion { position: absolute; left: -9999px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Lost in Translation</h1>
+    <p>A measurement mix-up in France, starring Lena, Jake &amp; Lucas</p>
+  </header>
+
+  <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar" aria-label="Story progress">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <div class="card" id="gameCard"></div>
+  <div id="liveRegion" aria-live="polite"></div>
+</div>
+
+<script>
+  const scenes = [
+    {
+      emoji: "🗼",
+      lines: [
+        { speaker: "Narrator", text: "Lena and Jake were thrilled to visit France. Their host, Lucas, mentioned a weekend trip." },
+        { speaker: "Lucas", text: "\u201cIt\u2019s just 100 kilometers away!\u201d" },
+        { speaker: "Jake", text: "\u201cGreat, that\u2019s like 10 minutes!\u201d Jake grinned." }
+      ],
+      question: "Lena rolls her eyes. About how many miles is 100 kilometers, really?",
+      choices: [
+        { text: "About 62 miles", correct: true },
+        { text: "About 160 miles", correct: false },
+        { text: "About 100 miles", correct: false },
+        { text: "About 10 miles", correct: false }
+      ],
+      correctFeedback: "Right! 100 km \u00f7 1.609344 \u2248 62.1 miles. Definitely more than a 10-minute hop, Jake.",
+      wrongFeedback: "Not quite \u2014 to convert km to miles, divide by 1.609344. 100 \u00f7 1.609344 \u2248 62.1 miles."
+    },
+    {
+      emoji: "🚗",
+      lines: [
+        { speaker: "Lena", text: "\u201cThat's over 60 miles, genius,\u201d Lena sighed, pulling up the map." },
+        { speaker: "Narrator", text: "Jake stared at the highway signs, all in kilometers, and started doing frantic math in his head." }
+      ],
+      question: "Jake sees a sign: 'Paris 240 km.' Which formula should he use to find the distance in miles?",
+      choices: [
+        { text: "miles = km \u00d7 1.609344", correct: false },
+        { text: "miles = km \u00f7 1.609344", correct: true },
+        { text: "miles = km + 1.609344", correct: false },
+        { text: "miles = km \u00f7 2", correct: false }
+      ],
+      correctFeedback: "Exactly! Dividing by 1.609344 converts kilometers into miles. So 240 km \u2248 149 miles.",
+      wrongFeedback: "The correct formula is miles = km \u00f7 1.609344. So 240 km \u00f7 1.609344 \u2248 149 miles."
+    },
+    {
+      emoji: "🌡️",
+      lines: [
+        { speaker: "Narrator", text: "On arrival, Lena checked the weather." },
+        { speaker: "Lena", text: "\u201cIt\u2019s going to be 30 degrees tomorrow!\u201d" },
+        { speaker: "Jake", text: "\u201cI\u2019m bringing a coat!\u201d Jake panicked, already picturing snow." },
+        { speaker: "Lucas", text: "\u201cThat\u2019s Celsius, not Fahrenheit! You\u2019ll melt,\u201d Lucas laughed." }
+      ],
+      question: "What is 30\u00b0C in Fahrenheit? (Use \u00b0F = (9/5)\u00d7\u00b0C + 32)",
+      choices: [
+        { text: "86\u00b0F", correct: true },
+        { text: "30\u00b0F", correct: false },
+        { text: "62\u00b0F", correct: false },
+        { text: "104\u00b0F", correct: false }
+      ],
+      correctFeedback: "Yes! (9/5)\u00d730 + 32 = 54 + 32 = 86\u00b0F. Time to pack shorts, not a coat.",
+      wrongFeedback: "Let's check: (9/5)\u00d730 + 32 = 54 + 32 = 86\u00b0F. That's a warm day, not a cold one!"
+    },
+    {
+      emoji: "🧥",
+      lines: [
+        { speaker: "Narrator", text: "Determined not to be fooled twice, Jake decided to test his new skill." },
+        { speaker: "Jake", text: "\u201cOkay, okay. If it's 0 degrees Celsius, that's freezing, right? Like ice-on-the-sidewalk freezing?\u201d" }
+      ],
+      question: "What is 0\u00b0C in Fahrenheit?",
+      choices: [
+        { text: "0\u00b0F", correct: false },
+        { text: "32\u00b0F", correct: true },
+        { text: "100\u00b0F", correct: false },
+        { text: "212\u00b0F", correct: false }
+      ],
+      correctFeedback: "Correct! 0\u00b0C is the freezing point of water, which is 32\u00b0F. Jake finally gets it.",
+      wrongFeedback: "0\u00b0C is water's freezing point, and that equals 32\u00b0F \u2014 using (9/5)\u00d70 + 32 = 32."
+    },
+    {
+      emoji: "🗺️",
+      lines: [
+        { speaker: "Narrator", text: "Later, Lucas mentioned their hotel was only 5 kilometers from the beach." },
+        { speaker: "Jake", text: "\u201cI've got this one,\u201d Jake said confidently, pulling out his phone calculator." }
+      ],
+      question: "About how many miles is 5 kilometers?",
+      choices: [
+        { text: "About 3.1 miles", correct: true },
+        { text: "About 8 miles", correct: false },
+        { text: "About 5 miles", correct: false },
+        { text: "About 1.6 miles", correct: false }
+      ],
+      correctFeedback: "Nice work! 5 \u00f7 1.609344 \u2248 3.1 miles \u2014 a very walkable distance to the beach.",
+      wrongFeedback: "5 km \u00f7 1.609344 \u2248 3.1 miles. Jake's getting the hang of this now."
+    },
+    {
+      emoji: "🍦",
+      lines: [
+        { speaker: "Narrator", text: "By the end of the trip, Jake had learned two things: the metric system is important, and never assume 30 degrees means cold." },
+        { speaker: "Lena", text: "\u201cSo... still bringing that coat?\u201d Lena teased, licking a very melty ice cream cone." },
+        { speaker: "Jake", text: "\u201cAbsolutely not,\u201d Jake laughed. \u201cBut I am bringing sunscreen.\u201d" }
+      ],
+      question: "One last check: if the forecast says 20\u00b0C, should Jake pack a heavy coat?",
+      choices: [
+        { text: "No \u2014 20\u00b0C \u2248 68\u00b0F, a mild day", correct: true },
+        { text: "Yes \u2014 20\u00b0C is freezing", correct: false },
+        { text: "Yes \u2014 20\u00b0C \u2248 20\u00b0F", correct: false },
+        { text: "No idea, Celsius is unknowable", correct: false }
+      ],
+      correctFeedback: "Correct! (9/5)\u00d720 + 32 = 68\u00b0F \u2014 a mild, pleasant day. No heavy coat needed.",
+      wrongFeedback: "(9/5)\u00d720 + 32 = 68\u00b0F, a mild day. Definitely coat-free weather."
+    }
+  ];
+
+  let current = 0;
+  let score = 0;
+  let answered = false;
+
+  const gameCard = document.getElementById('gameCard');
+  const progressFill = document.getElementById('progressFill');
+  const progressBar = document.getElementById('progressBar');
+  const liveRegion = document.getElementById('liveRegion');
+
+  function updateProgress() {
+    const pct = Math.round((current / scenes.length) * 100);
+    progressFill.style.width = pct + '%';
+    progressBar.setAttribute('aria-valuenow', pct);
+  }
+
+  function renderScene(index) {
+    answered = false;
+    const scene = scenes[index];
+    updateProgress();
+
+    let linesHtml = scene.lines.map(l =>
+      `<div class="speaker">${l.speaker}</div><p class="line">${l.text}</p>`
+    ).join('');
+
+    let choicesHtml = scene.choices.map((c, i) =>
+      `<button class="choice" data-index="${i}" role="option" aria-selected="false">${c.text}</button>`
+    ).join('');
+
+    gameCard.innerHTML = `
+      <div class="scene-img" aria-hidden="true">${scene.emoji}</div>
+      ${linesHtml}
+      <div class="question-box">
+        <p id="qtext">${scene.question}</p>
+        <div class="choices" role="listbox" aria-labelledby="qtext">${choicesHtml}</div>
+        <div class="feedback" id="feedback" role="status"></div>
+      </div>
+      <button class="continue-btn" id="continueBtn">Continue \u2192</button>
+    `;
+
+    const buttons = gameCard.querySelectorAll('.choice');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => handleAnswer(btn, scene));
+    });
+  }
+
+  function handleAnswer(btn, scene) {
+    if (answered) return;
+    answered = true;
+    const idx = parseInt(btn.getAttribute('data-index'));
+    const isCorrect = scene.choices[idx].correct;
+    const feedback = document.getElementById('feedback');
+    const continueBtn = document.getElementById('continueBtn');
+    const buttons = gameCard.querySelectorAll('.choice');
+
+    buttons.forEach((b, i) => {
+      b.disabled = true;
+      if (scene.choices[i].correct) {
+        b.classList.add('correct');
+      } else if (b === btn) {
+        b.classList.add('incorrect');
+      }
+    });
+
+    if (isCorrect) {
+      score++;
+      feedback.textContent = scene.correctFeedback;
+      feedback.className = 'feedback show right';
+    } else {
+      feedback.textContent = scene.wrongFeedback;
+      feedback.className = 'feedback show wrong';
+    }
+    liveRegion.textContent = feedback.textContent;
+
+    continueBtn.classList.add('show');
+    continueBtn.focus();
+    continueBtn.addEventListener('click', nextScene);
+  }
+
+  function nextScene() {
+    current++;
+    if (current < scenes.length) {
+      renderScene(current);
+      gameCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      renderFinal();
+    }
+  }
+
+  function renderFinal() {
+    updateProgress();
+    progressFill.style.width = '100%';
+    progressBar.setAttribute('aria-valuenow', 100);
+
+    const total = scenes.length;
+    let message;
+    if (score === total) {
+      message = "Perfect score! You're basically Lucas at this point.";
+    } else if (score >= total - 2) {
+      message = "Solid work! You've clearly out-converted Jake.";
+    } else {
+      message = "A few slippery units there \u2014 maybe give it another spin?";
+    }
+
+    gameCard.innerHTML = `
+      <div class="final-card">
+        <div class="scene-img" aria-hidden="true">🏆</div>
+        <h2>Trip Complete!</h2>
+        <div class="score-display">${score} / ${total}</div>
+        <p>${message}</p>
+        <div class="moral">Moral: Know your units\u2014or prepare to overheat!</div>
+        <button class="restart-btn" id="restartBtn">Play Again</button>
+      </div>
+    `;
+    document.getElementById('restartBtn').addEventListener('click', () => {
+      current = 0;
+      score = 0;
+      renderScene(current);
+    });
+    liveRegion.textContent = `Story complete. Final score ${score} out of ${total}. ${message}`;
+  }
+
+  renderScene(current);
+</script>
+</body>
+</html>
