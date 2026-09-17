@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,7 +84,6 @@
   .restart-btn:hover { background: #001f5c; }
   .leaderboard-btn { background: var(--orange); }
   .leaderboard-btn:hover { background: #a34a00; }
-  .leaderboard-btn:disabled { background: #c9c9c9; cursor: default; }
   .name-input {
     width: 100%; padding: 12px 14px; font-size: 1.05rem; border-radius: 10px;
     border: 2px solid var(--navy); margin-bottom: 14px; font-family: inherit;
@@ -96,12 +94,16 @@
     background: var(--orange); color: white; border: none; border-radius: 10px; cursor: pointer;
   }
   .start-btn:hover { background: #a34a00; }
-  .start-btn:disabled { background: #c9c9c9; cursor: default; }
   .lb-table { width: 100%; border-collapse: collapse; margin-top: 12px; text-align: left; }
   .lb-table th, .lb-table td { padding: 8px 10px; border-bottom: 1px solid #d7dbe0; font-size: 0.95rem; }
   .lb-table th { color: var(--navy); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; }
   .lb-table tr.me { background: #fff3e8; font-weight: 700; }
   .lb-note { font-size: 0.85rem; color: #666; margin-top: 10px; }
+  .clear-btn {
+    margin-top: 14px; padding: 8px 16px; font-size: 0.85rem; font-weight: 600;
+    background: white; color: var(--red-no); border: 2px solid var(--red-no); border-radius: 8px; cursor: pointer;
+  }
+  .clear-btn:hover { background: #fbe6e4; }
   .back-btn {
     margin-top: 16px; padding: 10px 20px; font-size: 0.95rem; font-weight: 700;
     background: white; color: var(--navy); border: 2px solid var(--navy); border-radius: 10px; cursor: pointer;
@@ -233,34 +235,19 @@
     }
   ];
 
+  const LB_KEY = 'lostInTranslation_leaderboard_v1';
+
   let current = 0;
   let score = 0;
   let answered = false;
   let playerName = "";
   let startTime = 0;
-  let savedDocId = null;
-  let dbNamespace = undefined; // undefined = not yet checked, null = unavailable
+  let savedEntryId = null;
 
   const gameCard = document.getElementById('gameCard');
   const progressFill = document.getElementById('progressFill');
   const progressBar = document.getElementById('progressBar');
   const liveRegion = document.getElementById('liveRegion');
-
-  async function getDb() {
-    if (dbNamespace !== undefined) return dbNamespace;
-    try {
-      if (window.claude && typeof window.claude.use === 'function') {
-        dbNamespace = await window.claude.use('db');
-      } else {
-        dbNamespace = null;
-      }
-    } catch (e) {
-      dbNamespace = null;
-    }
-    return dbNamespace;
-  }
-  // Kick off the check early so it's likely resolved by game end.
-  getDb();
 
   function updateProgress() {
     const pct = Math.round((current / scenes.length) * 100);
@@ -274,10 +261,40 @@
     return div.innerHTML;
   }
 
+  function loadEntries() {
+    try {
+      const raw = localStorage.getItem(LB_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveEntries(arr) {
+    try {
+      localStorage.setItem(LB_KEY, JSON.stringify(arr));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function addEntryToLeaderboard(name, score, total, ms) {
+    const entries = loadEntries();
+    const id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    entries.push({ id, name, score, total, ms, createdAt: Date.now() });
+    // keep the leaderboard from growing without bound on one device
+    entries.sort((a, b) => (b.score - a.score) || (a.ms - b.ms));
+    const trimmed = entries.slice(0, 100);
+    saveEntries(trimmed);
+    return id;
+  }
+
   function renderNameScreen() {
     gameCard.innerHTML = `
       <div class="scene-img" aria-hidden="true">✈️</div>
-      <p class="line">Before you touch down in France with Lena and Jake, tell us who's playing \u2014 your name will appear on the leaderboard at the end.</p>
+      <p class="line">Before you touch down in France with Lena and Jake, tell us who's playing \u2014 your name will appear on this device's leaderboard at the end.</p>
       <label for="nameInput" class="sr-only">Your name</label>
       <input type="text" id="nameInput" class="name-input" placeholder="Enter your name" maxlength="24" autocomplete="off">
       <button class="start-btn" id="startBtn">Start the Story \u2192</button>
@@ -374,30 +391,15 @@
     }
   }
 
-  async function saveScoreToLeaderboard() {
-    const db = await getDb();
-    if (!db) return null;
-    const ms = Date.now() - startTime;
-    try {
-      const ref = await db.collection('scores').add({
-        name: playerName || 'Anonymous',
-        score: score,
-        total: scenes.length,
-        ms: ms,
-        createdAt: Date.now()
-      });
-      return ref.id;
-    } catch (e) {
-      return null;
-    }
-  }
-
   function renderFinal() {
     updateProgress();
     progressFill.style.width = '100%';
     progressBar.setAttribute('aria-valuenow', 100);
 
     const total = scenes.length;
+    const ms = Date.now() - startTime;
+    savedEntryId = addEntryToLeaderboard(playerName || 'Anonymous', score, total, ms);
+
     let message;
     if (score === total) {
       message = "Perfect score! You're basically Lucas at this point.";
@@ -415,7 +417,7 @@
         <p>${message}</p>
         <div class="moral">Moral: Know your units\u2014or prepare to overheat!</div>
         <div class="btn-row">
-          <button class="leaderboard-btn" id="leaderboardBtn" disabled>Checking leaderboard\u2026</button>
+          <button class="leaderboard-btn" id="leaderboardBtn">View Leaderboard</button>
           <button class="restart-btn" id="restartBtn">Play Again</button>
         </div>
       </div>
@@ -425,100 +427,81 @@
     document.getElementById('restartBtn').addEventListener('click', () => {
       current = 0;
       score = 0;
-      savedDocId = null;
+      savedEntryId = null;
       renderNameScreen();
     });
-
-    const lbBtn = document.getElementById('leaderboardBtn');
-
-    (async () => {
-      savedDocId = await saveScoreToLeaderboard();
-      const db = await getDb();
-      if (db) {
-        lbBtn.disabled = false;
-        lbBtn.textContent = 'View Leaderboard';
-        lbBtn.addEventListener('click', renderLeaderboard);
-      } else {
-        lbBtn.textContent = 'Leaderboard unavailable here';
-      }
-    })();
+    document.getElementById('leaderboardBtn').addEventListener('click', renderLeaderboard);
   }
 
-  async function renderLeaderboard() {
+  function renderLeaderboard() {
+    const entries = loadEntries().slice();
+    entries.sort((a, b) => (b.score - a.score) || (a.ms - b.ms));
+
     gameCard.innerHTML = `
       <div class="final-card">
         <div class="scene-img" aria-hidden="true">📊</div>
         <h2>Leaderboard</h2>
-        <p id="lbStatus">Loading scores\u2026</p>
+        <p id="lbStatus"></p>
       </div>
     `;
-    const db = await getDb();
     const statusEl = document.getElementById('lbStatus');
-    if (!db) {
-      statusEl.textContent = 'The leaderboard is not available in this view.';
-      appendBackButton();
+
+    if (entries.length === 0) {
+      statusEl.textContent = 'No scores yet on this device \u2014 you\u2019re the first!';
+      appendLeaderboardFooter(false);
       return;
     }
-    try {
-      const snap = await db.collection('scores').orderBy('score', 'desc').limit(200).get();
-      let rows = snap.docs.map(d => {
-        const data = d.data() || {};
-        return {
-          id: d.id,
-          name: typeof data.name === 'string' ? data.name : 'Anonymous',
-          score: typeof data.score === 'number' ? data.score : 0,
-          total: typeof data.total === 'number' ? data.total : scenes.length,
-          ms: typeof data.ms === 'number' ? data.ms : Number.MAX_SAFE_INTEGER
-        };
-      });
-      rows.sort((a, b) => (b.score - a.score) || (a.ms - b.ms));
 
-      if (rows.length === 0) {
-        statusEl.textContent = 'No scores yet \u2014 you\u2019re the first!';
-        appendBackButton();
-        return;
-      }
+    let myRank = null;
+    const rowsHtml = entries.map((r, i) => {
+      const rank = i + 1;
+      const isMe = savedEntryId && r.id === savedEntryId;
+      if (isMe) myRank = rank;
+      const seconds = ((r.ms || 0) / 1000).toFixed(1);
+      return `<tr class="${isMe ? 'me' : ''}">
+        <td>#${rank}</td>
+        <td>${escapeHtml(r.name || 'Anonymous')}${isMe ? ' (you)' : ''}</td>
+        <td>${r.score}/${r.total}</td>
+        <td>${seconds}s</td>
+      </tr>`;
+    }).join('');
 
-      let myRank = null;
-      const rowsHtml = rows.map((r, i) => {
-        const rank = i + 1;
-        const isMe = savedDocId && r.id === savedDocId;
-        if (isMe) myRank = rank;
-        const seconds = (r.ms / 1000).toFixed(1);
-        return `<tr class="${isMe ? 'me' : ''}">
-          <td>#${rank}</td>
-          <td>${escapeHtml(r.name)}${isMe ? ' (you)' : ''}</td>
-          <td>${r.score}/${r.total}</td>
-          <td>${seconds}s</td>
-        </tr>`;
-      }).join('');
+    statusEl.textContent = myRank
+      ? `You placed #${myRank} out of ${entries.length} on this device!`
+      : `Showing all ${entries.length} scores on this device.`;
 
-      statusEl.textContent = myRank
-        ? `You placed #${myRank} out of ${rows.length}!`
-        : `Showing all ${rows.length} scores.`;
-
-      gameCard.innerHTML += `
-        <table class="lb-table" aria-label="Leaderboard standings">
-          <thead>
-            <tr><th>Rank</th><th>Name</th><th>Score</th><th>Time</th></tr>
-          </thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>
-        <p class="lb-note">Ranked by score, then by fastest completion time.</p>
-      `;
-      appendBackButton();
-    } catch (e) {
-      statusEl.textContent = 'Could not load the leaderboard right now.';
-      appendBackButton();
-    }
+    gameCard.innerHTML += `
+      <table class="lb-table" aria-label="Leaderboard standings">
+        <thead>
+          <tr><th>Rank</th><th>Name</th><th>Score</th><th>Time</th></tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <p class="lb-note">Ranked by score, then by fastest completion time. Scores are saved on this device/browser only.</p>
+    `;
+    appendLeaderboardFooter(true);
   }
 
-  function appendBackButton() {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'final-card';
-    wrapper.innerHTML = `<button class="back-btn" id="backBtn">\u2190 Back to Results</button>`;
-    gameCard.querySelector('.final-card').appendChild(wrapper.firstElementChild);
+  function appendLeaderboardFooter(showClear) {
+    const container = gameCard.querySelector('.final-card');
+    const row = document.createElement('div');
+    row.className = 'btn-row';
+    row.style.marginTop = '16px';
+    row.innerHTML = `
+      <button class="back-btn" id="backBtn">\u2190 Back to Results</button>
+      ${showClear ? '<button class="clear-btn" id="clearBtn">Clear this device\u2019s scores</button>' : ''}
+    `;
+    container.appendChild(row);
     document.getElementById('backBtn').addEventListener('click', renderFinal);
+    const clearBtn = document.getElementById('clearBtn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (confirm('Clear all saved scores on this device? This cannot be undone.')) {
+          saveEntries([]);
+          renderLeaderboard();
+        }
+      });
+    }
   }
 
   renderNameScreen();
