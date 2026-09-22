@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blueprint Bandit: A Geometry Caper</title>
+<style>
+  :root {
+    --navy: #003087;
+    --orange: #BF5700;
+    --light-bg: rgba(247, 248, 247, 1);
+    --text-dark: #1a1a1a;
+    --green-ok: #1e6b1e;
+    --red-no: #a3231a;
+    --card-radius: 14px;
+    --page-bg-1: #f7f8f7;
+    --page-bg-2: #eef1f6;
+    --card-border: var(--navy);
+    --card-bg: var(--light-bg);
+    --body-text: #1a1a1a;
+    --sub-text: #444;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --page-bg-1: #0f1117;
+      --page-bg-2: #161a23;
+      --card-bg: #1c2029;
+      --card-border: #5b7fd6;
+      --body-text: #f0f1f4;
+      --sub-text: #c3c6ce;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page-bg-1: #0f1117;
+    --page-bg-2: #161a23;
+    --card-bg: #1c2029;
+    --card-border: #5b7fd6;
+    --body-text: #f0f1f4;
+    --sub-text: #c3c6ce;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(180deg, var(--page-bg-1) 0%, var(--page-bg-2) 100%);
+    color: var(--body-text);
+    display: flex;
+    justify-content: center;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 14px calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+  .wrap { max-width: 660px; width: 100%; }
+  header { text-align: center; margin-bottom: 18px; }
+  header h1 { color: var(--navy); font-size: 1.7rem; margin: 0 0 4px; }
+  :root[data-theme="dark"] header h1, :root:not([data-theme="light"]) header h1 { color: #7fa2f0; }
+  @media (prefers-color-scheme: dark) { header h1 { color: #7fa2f0; } }
+  header p { margin: 0; color: var(--sub-text); font-size: 1rem; }
+  .progress-track {
+    background: #ddd;
+    border-radius: 20px;
+    height: 10px;
+    width: 100%;
+    margin: 14px 0 22px;
+    overflow: hidden;
+  }
+  .progress-fill { background: var(--orange); height: 100%; width: 0%; transition: width 0.4s ease; }
+  .card {
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: var(--card-radius);
+    padding: 22px 22px 26px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    animation: slideUp 0.35s ease;
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+  .scene-img { font-size: 2.6rem; text-align: center; margin-bottom: 6px; }
+  .speaker { font-weight: 700; color: var(--orange); margin-bottom: 2px; font-size: 0.95rem; }
+  .line { margin: 0 0 14px; line-height: 1.5; font-size: 1.03rem; }
+  .villain .speaker { color: var(--red-no); }
+  .villain .line { font-style: italic; }
+  .skill-tag {
+    display: inline-block;
+    background: var(--navy);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+  .question { font-weight: 700; margin: 10px 0 14px; font-size: 1.05rem; }
+  .options { display: grid; gap: 10px; margin-bottom: 6px; }
+  .opt {
+    text-align: left;
+    padding: 12px 14px;
+    border: 2px solid var(--card-border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--body-text);
+    font-size: 0.98rem;
+    cursor: pointer;
+    transition: transform 0.1s ease, background 0.15s ease;
+  }
+  .opt:hover:not(:disabled) { background: rgba(191, 87, 0, 0.1); transform: translateY(-1px); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: rgba(30, 107, 30, 0.18); border-color: var(--green-ok); font-weight: 700; }
+  .opt.incorrect { background: rgba(163, 35, 26, 0.16); border-color: var(--red-no); }
+  .feedback {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 0.98rem;
+    line-height: 1.5;
+  }
+  .feedback.show { display: block; }
+  .feedback.right { background: rgba(30, 107, 30, 0.15); border: 1px solid var(--green-ok); }
+  .feedback.wrong { background: rgba(163, 35, 26, 0.13); border: 1px solid var(--red-no); }
+  .continue-btn, .restart-btn {
+    display: none;
+    margin-top: 16px;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+  }
+  .continue-btn.show { display: block; }
+  .continue-btn:hover, .restart-btn:hover { filter: brightness(1.08); }
+  .final-card { text-align: center; }
+  .score-display { font-size: 2.4rem; font-weight: 800; color: var(--navy); margin: 8px 0; }
+  @media (prefers-color-scheme: dark) { .score-display { color: #7fa2f0; } }
+  :root[data-theme="dark"] .score-display { color: #7fa2f0; }
+  .moral {
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(191, 87, 0, 0.12);
+    border: 1px solid var(--orange);
+    font-weight: 600;
+  }
+  .restart-btn { display: block; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+  .name-screen { text-align: center; }
+  .name-input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    border-radius: 10px;
+    border: 2px solid var(--card-border);
+    background: var(--card-bg);
+    color: var(--body-text);
+    margin: 14px 0 6px;
+  }
+  .start-btn {
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+  }
+  .start-btn:hover { filter: brightness(1.1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📐 Blueprint Bandit: A Geometry Caper</h1>
+    <p>Perimeter · Area · Volume · The Pythagorean Theorem</p>
+  </header>
+  <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progressBar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+  <div class="card" id="gameCard"></div>
+  <div class="sr-only" aria-live="polite" id="liveRegion"></div>
+</div>
+
+<script>
+(function() {
+  "use strict";
+
+  const gameCard = document.getElementById('gameCard');
+  const progressFill = document.getElementById('progressFill');
+  const progressBar = document.getElementById('progressBar');
+  const liveRegion = document.getElementById('liveRegion');
+
+  let playerName = "";
+  let current = 0;
+  let score = 0;
+
+  const scenes = [
+    {
+      img: "🏕️",
+      dialogue: [
+        { speaker: "Narrator", text: "Marcus, Priya, and Ana are building the ultimate backyard blanket fort for the school Engineering Fair. Blueprint in hand, they're ready to measure, cut, and conquer." },
+        { speaker: "Marcus", text: "This is going to be the greatest fort in the history of forts. I can feel it." },
+        { speaker: "Priya", text: "You said that about the pillow catapult. We are still finding pillows." }
+      ],
+      intro: true
+    },
+    {
+      img: "😈",
+      dialogue: [
+        { speaker: "Narrator", text: "But lurking behind the shed is a familiar shadow — Leslie, Supreme Overlord of Unlabeled Diagrams, sworn enemy of correctly labeled math homework." },
+        { speaker: "Leslie, Supreme Overlord of Unlabeled Diagrams", text: "Fools! While you slept, I crept into your blueprint and swapped a few numbers. Let's see you build a fort now — MWAHAHA!", villain: true },
+        { speaker: "Ana", text: "...he really needs a hobby that isn't sabotaging middle schoolers." }
+      ],
+      intro: true
+    },
+    {
+      skill: "Perimeter",
+      img: "🧵",
+      dialogue: [
+        { speaker: "Narrator", text: "First up: the fort's rectangular base needs a string-light border all the way around it. The blueprint says the base is 15 feet long and 9 feet wide." },
+        { speaker: "Marcus", text: "Easy. Fifteen times nine. Done. I'm a genius." },
+        { speaker: "Priya", text: "That's the AREA, Marcus. We need the distance AROUND it — the perimeter — for the lights." }
+      ],
+      question: "How many feet of string lights do they need to go around the border?",
+      options: [
+        { text: "135 ft", correct: false },
+        { text: "24 ft", correct: false },
+        { text: "48 ft", correct: true },
+        { text: "60 ft", correct: false }
+      ],
+      correctFeedback: "P = 2(l + w) = 2(15 + 9) = 2(24) = 48 ft. Marcus, that's the perimeter — the distance around the whole rectangle.",
+      wrongFeedback: "Perimeter means going all the way AROUND the shape. Add all four sides: 15 + 9 + 15 + 9 = 48 ft, or use P = 2(l + w)."
+    },
+    {
+      skill: "Perimeter",
+      img: "🚧",
+      dialogue: [
+        { speaker: "Narrator", text: "Next, they need caution tape around the L-shaped patio next to the fort (so nobody trips over Marcus's catapult pillows). The side lengths, in order, are: 10 ft, 6 ft, 4 ft, 3 ft, 6 ft, 3 ft." },
+        { speaker: "Leslie, Supreme Overlord of Unlabeled Diagrams", text: "Behold! An IRREGULAR shape! Surely this will stump you!", villain: true },
+        { speaker: "Ana", text: "It's still just... adding up the sides. Nice try, Leslie." }
+      ],
+      question: "How much caution tape (total perimeter) do they need for the L-shaped patio?",
+      options: [
+        { text: "32 ft", correct: true },
+        { text: "24 ft", correct: false },
+        { text: "60 ft", correct: false },
+        { text: "20 ft", correct: false }
+      ],
+      correctFeedback: "10 + 6 + 4 + 3 + 6 + 3 = 32 ft. For any irregular polygon, perimeter is just the sum of every side length.",
+      wrongFeedback: "Add up every single side, no formula needed here: 10 + 6 + 4 + 3 + 6 + 3 = 32 ft."
+    },
+    {
+      skill: "Area",
+      img: "🛖",
+      dialogue: [
+        { speaker: "Narrator", text: "Now for the roof: a waterproof tarp needs to cover the same 15 ft by 9 ft base, with zero gaps (Marcus insists this is 'non-negotiable' after last year's Sprinkler Incident)." },
+        { speaker: "Marcus", text: "So we need... the perimeter again?" },
+        { speaker: "Priya", text: "NO. We need to cover the whole surface. That's area, not perimeter, Marcus." }
+      ],
+      question: "How many square feet of tarp do they need to cover the roof?",
+      options: [
+        { text: "48 sq ft", correct: false },
+        { text: "24 sq ft", correct: false },
+        { text: "135 sq ft", correct: true },
+        { text: "270 sq ft", correct: false }
+      ],
+      correctFeedback: "A = l × w = 15 × 9 = 135 sq ft. Area covers the whole surface, measured in square units.",
+      wrongFeedback: "For a rectangle, Area = length × width = 15 × 9 = 135 sq ft. Remember: area is measured in SQUARE units because you're covering a surface."
+    },
+    {
+      skill: "Area",
+      img: "🚩",
+      dialogue: [
+        { speaker: "Narrator", text: "To mark their fort as officially claimed, the team sews a triangular flag. The base of the triangle is 8 inches and the height is 5 inches." },
+        { speaker: "Leslie, Supreme Overlord of Unlabeled Diagrams", text: "A triangle! Try multiplying base times height and see how far that gets you!", villain: true },
+        { speaker: "Priya", text: "We're not falling for that. Triangles get cut in half." }
+      ],
+      question: "What is the area of the triangular flag?",
+      options: [
+        { text: "40 sq in", correct: false },
+        { text: "20 sq in", correct: true },
+        { text: "13 sq in", correct: false },
+        { text: "26 sq in", correct: false }
+      ],
+      correctFeedback: "A = ½ × base × height = ½ × 8 × 5 = 20 sq in. A triangle is always half of the rectangle that surrounds it.",
+      wrongFeedback: "Triangle area is half of base times height: A = ½ × 8 × 5 = 20 sq in. Don't forget the ½!"
+    },
+    {
+      skill: "Volume",
+      img: "📦",
+      dialogue: [
+        { speaker: "Narrator", text: "Inside the fort, they're building a snack storage crate shaped like a rectangular box: 4 ft long, 3 ft wide, and 2 ft tall." },
+        { speaker: "Marcus", text: "How much space is inside for my emergency pretzel supply?" },
+        { speaker: "Ana", text: "That's volume — how much space fills up the whole box, not just one face of it." }
+      ],
+      question: "What is the volume of the snack crate?",
+      options: [
+        { text: "9 cubic ft", correct: false },
+        { text: "24 cubic ft", correct: true },
+        { text: "12 cubic ft", correct: false },
+        { text: "18 cubic ft", correct: false }
+      ],
+      correctFeedback: "V = l × w × h = 4 × 3 × 2 = 24 cubic ft. Volume fills three dimensions, so it's measured in cubic units.",
+      wrongFeedback: "For a rectangular box: Volume = length × width × height = 4 × 3 × 2 = 24 cubic ft."
+    },
+    {
+      skill: "Volume",
+      img: "🛢️",
+      dialogue: [
+        { speaker: "Narrator", text: "For the fort's 'emergency water reserve' (a cylindrical rain barrel), the radius is 1 foot and the height is 3 feet." },
+        { speaker: "Leslie, Supreme Overlord of Unlabeled Diagrams", text: "Ha! A CYLINDER! I've swapped the formula in your notes to just 'length times width'! You're doomed!", villain: true },
+        { speaker: "Priya", text: "Nice try. We know it's π times radius squared times height." }
+      ],
+      question: "What is the volume of the rain barrel? (Use π ≈ 3.14, round to the nearest tenth)",
+      options: [
+        { text: "9.4 cubic ft", correct: true },
+        { text: "3.14 cubic ft", correct: false },
+        { text: "18.8 cubic ft", correct: false },
+        { text: "6.3 cubic ft", correct: false }
+      ],
+      correctFeedback: "V = πr²h = 3.14 × 1² × 3 = 3.14 × 1 × 3 = 9.4 cubic ft. For a cylinder, first square the radius, then multiply by π and the height.",
+      wrongFeedback: "Cylinder volume is V = πr²h = 3.14 × (1)² × 3 = 9.4 cubic ft. Square the radius first, then multiply by π and height."
+    },
+    {
+      skill: "Pythagorean Theorem",
+      img: "🪜",
+      dialogue: [
+        { speaker: "Narrator", text: "To reach the fort's lookout window, they need a diagonal support beam. The base of the fort wall is 6 ft from the beam's foot, and the wall is 8 ft tall." },
+        { speaker: "Marcus", text: "So the beam is just 6 plus 8? Fourteen feet, easy!" },
+        { speaker: "Priya", text: "Marcus. It's the diagonal of a right triangle. We need the Pythagorean Theorem." }
+      ],
+      question: "How long does the diagonal support beam need to be?",
+      options: [
+        { text: "14 ft", correct: false },
+        { text: "10 ft", correct: true },
+        { text: "48 ft", correct: false },
+        { text: "100 ft", correct: false }
+      ],
+      correctFeedback: "a² + b² = c² → 6² + 8² = 36 + 64 = 100 → c = √100 = 10 ft. The diagonal (hypotenuse) is always the longest side, opposite the right angle.",
+      wrongFeedback: "Use a² + b² = c²: 6² + 8² = 36 + 64 = 100, and √100 = 10 ft. You can't just add the two legs together for the diagonal."
+    },
+    {
+      skill: "Pythagorean Theorem",
+      img: "🔦",
+      dialogue: [
+        { speaker: "Narrator", text: "One final trap: Leslie has hidden the master key at the top of a 13 ft ladder leaned against the fort wall. The base of the ladder sits 5 ft from the wall." },
+        { speaker: "Leslie, Supreme Overlord of Unlabeled Diagrams", text: "This time I've given you the HYPOTENUSE first! Surely THAT will confuse you!", villain: true },
+        { speaker: "Ana", text: "Solving for a missing leg instead of the hypotenuse? Still just algebra, Leslie." }
+      ],
+      question: "How high up the wall does the ladder reach?",
+      options: [
+        { text: "18 ft", correct: false },
+        { text: "8 ft", correct: false },
+        { text: "12 ft", correct: true },
+        { text: "169 ft", correct: false }
+      ],
+      correctFeedback: "a² + b² = c² → 5² + b² = 13² → 25 + b² = 169 → b² = 144 → b = 12 ft. When the hypotenuse is given, isolate the missing leg before taking the square root.",
+      wrongFeedback: "Set up 5² + b² = 13², so 25 + b² = 169, then b² = 144, and b = 12 ft. Solve for the missing leg by isolating it first."
+    }
+  ];
+
+  const closingLines = [
+    { speaker: "Narrator", text: "With every measurement correctly reclaimed, the fort stands tall — string lights blazing, tarp roof watertight, snack crate fully stocked, and the diagonal beam holding strong." },
+    { speaker: "Leslie, Supreme Overlord of Unlabeled Diagrams", text: "Curses! Foiled by... correctly applied formulas! I'll be back when you least expect decimals!", villain: true },
+    { speaker: "Marcus", text: "Wait, so the moral is... measure twice, sabotage-proof once?" },
+    { speaker: "Priya", text: "Something like that." }
+  ];
+
+  function updateProgress() {
+    const total = scenes.length;
+    const pct = Math.round((current / total) * 100);
+    progressFill.style.width = pct + "%";
+    progressBar.setAttribute('aria-valuenow', pct);
+  }
+
+  function renderNameScreen() {
+    gameCard.innerHTML = `
+      <div class="name-screen">
+        <div class="scene-img" aria-hidden="true">📐</div>
+        <p class="line">Before the caper begins — what's your name, blueprint hero?</p>
+        <label class="sr-only" for="nameInput">Your name</label>
+        <input type="text" id="nameInput" class="name-input" placeholder="Enter your name" maxlength="24" />
+        <button class="start-btn" id="startBtn">Start the Caper</button>
+      </div>
+    `;
+    const input = document.getElementById('nameInput');
+    const startBtn = document.getElementById('startBtn');
+    function go() {
+      const val = input.value.trim();
+      playerName = val || "Blueprint Hero";
+      renderScene(0);
+    }
+    startBtn.addEventListener('click', go);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+    input.focus();
+  }
+
+  function renderDialogue(container, dialogueArr) {
+    dialogueArr.forEach(d => {
+      const div = document.createElement('div');
+      div.className = d.villain ? 'villain' : '';
+      div.innerHTML = `<div class="speaker">${escapeHtml(d.speaker)}</div><p class="line">${escapeHtml(d.text)}</p>`;
+      container.appendChild(div);
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function renderScene(index) {
+    current = index;
+    updateProgress();
+    const scene = scenes[index];
+    gameCard.innerHTML = "";
+
+    const imgDiv = document.createElement('div');
+    imgDiv.className = 'scene-img';
+    imgDiv.setAttribute('aria-hidden', 'true');
+    imgDiv.textContent = scene.img;
+    gameCard.appendChild(imgDiv);
+
+    if (scene.skill) {
+      const tag = document.createElement('div');
+      tag.className = 'skill-tag';
+      tag.textContent = scene.skill;
+      gameCard.appendChild(tag);
+    }
+
+    const dialogueContainer = document.createElement('div');
+    renderDialogue(dialogueContainer, scene.dialogue);
+    gameCard.appendChild(dialogueContainer);
+
+    if (scene.intro) {
+      const btn = document.createElement('button');
+      btn.className = 'continue-btn show';
+      btn.textContent = index === 0 ? `Let's go, ${playerName || "hero"}!` : "Onward!";
+      btn.addEventListener('click', () => {
+        if (index + 1 < scenes.length) renderScene(index + 1);
+        else renderFinal();
+      });
+      gameCard.appendChild(btn);
+      liveRegion.textContent = scene.dialogue.map(d => d.speaker + ": " + d.text).join(" ");
+      return;
+    }
+
+    const qDiv = document.createElement('div');
+    qDiv.className = 'question';
+    qDiv.textContent = scene.question;
+    gameCard.appendChild(qDiv);
+
+    const optsDiv = document.createElement('div');
+    optsDiv.className = 'options';
+    const feedback = document.createElement('div');
+    feedback.className = 'feedback';
+
+    const continueBtn = document.createElement('button');
+    continueBtn.className = 'continue-btn';
+    continueBtn.textContent = 'Continue';
+
+    scene.options.forEach(opt => {
+      const b = document.createElement('button');
+      b.className = 'opt';
+      b.textContent = opt.text;
+      b.addEventListener('click', () => selectAnswer(opt, scene, optsDiv, feedback, continueBtn));
+      optsDiv.appendChild(b);
+    });
+
+    gameCard.appendChild(optsDiv);
+    gameCard.appendChild(feedback);
+    gameCard.appendChild(continueBtn);
+
+    liveRegion.textContent = scene.dialogue.map(d => d.speaker + ": " + d.text).join(" ") + " Question: " + scene.question;
+  }
+
+  function selectAnswer(chosen, scene, optsDiv, feedback, continueBtn) {
+    const buttons = optsDiv.querySelectorAll('.opt');
+    buttons.forEach(b => {
+      b.disabled = true;
+      const matches = b.textContent === chosen.text;
+      const isCorrectOpt = scene.options.find(o => o.text === b.textContent).correct;
+      if (isCorrectOpt) b.classList.add('correct');
+      else if (matches) b.classList.add('incorrect');
+    });
+
+    if (chosen.correct) {
+      score++;
+      feedback.textContent = scene.correctFeedback;
+      feedback.className = 'feedback show right';
+    } else {
+      feedback.textContent = scene.wrongFeedback;
+      feedback.className = 'feedback show wrong';
+    }
+    liveRegion.textContent = feedback.textContent;
+
+    continueBtn.classList.add('show');
+    continueBtn.focus();
+    continueBtn.addEventListener('click', () => {
+      if (current + 1 < scenes.length) {
+        renderScene(current + 1);
+        gameCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        renderFinal();
+      }
+    });
+  }
+
+  function renderFinal() {
+    current = scenes.length;
+    updateProgress();
+    progressFill.style.width = '100%';
+    progressBar.setAttribute('aria-valuenow', 100);
+
+    const scoredQuestions = scenes.filter(s => !s.intro).length;
+    let message;
+    if (score === scoredQuestions) {
+      message = `Perfect score, ${playerName}! Leslie never stood a chance.`;
+    } else if (score >= scoredQuestions - 2) {
+      message = `Nicely done, ${playerName}! The fort — and your geometry skills — are standing strong.`;
+    } else {
+      message = `The fort is built, ${playerName}, but a few formulas slipped through. Run it back and out-smart Leslie for good.`;
+    }
+
+    gameCard.innerHTML = "";
+    const wrap = document.createElement('div');
+    wrap.className = 'final-card';
+    wrap.innerHTML = `
+      <div class="scene-img" aria-hidden="true">🏆</div>
+      <h2>Caper Complete!</h2>
+      <div class="score-display">${score} / ${scoredQuestions}</div>
+      <p class="line">${message}</p>
+      <div class="moral">Moral: Every shape has its own formula — check which one before Leslie checks your work for you.</div>
+    `;
+    const restartBtn = document.createElement('button');
+    restartBtn.className = 'restart-btn';
+    restartBtn.textContent = 'Play Again';
+    restartBtn.addEventListener('click', () => {
+      score = 0;
+      renderScene(0);
+    });
+    wrap.appendChild(restartBtn);
+    gameCard.appendChild(wrap);
+
+    liveRegion.textContent = `Caper complete. Final score ${score} out of ${scoredQuestions}. ${message}`;
+  }
+
+  renderNameScreen();
+})();
+</script>
+</body>
+</html>
