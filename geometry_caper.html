@@ -175,9 +175,105 @@
     margin-top: 10px;
   }
   .start-btn:hover { filter: brightness(1.1); }
+  .start-btn:active, .continue-btn:active, .restart-btn:active, .opt:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+  .opt, .start-btn, .continue-btn, .restart-btn {
+    transition: transform 0.12s ease, background 0.15s ease, filter 0.12s ease;
+  }
+
+  /* ---- Ambient background particles ---- */
+  .particles {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .particle {
+    position: absolute;
+    bottom: -60px;
+    font-size: 1.6rem;
+    opacity: 0.28;
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.3; }
+    90% { opacity: 0.25; }
+    100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+  }
+  .wrap { position: relative; z-index: 1; }
+
+  /* ---- Screen shake on wrong answer ---- */
+  .shake { animation: shakeAnim 0.45s ease; }
+  @keyframes shakeAnim {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-8px); }
+    40%, 60% { transform: translateX(8px); }
+  }
+
+  /* ---- Villain speech bubble wiggle ---- */
+  .villain { animation: villainWiggle 0.5s ease; }
+  @keyframes villainWiggle {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-1.5deg); }
+    50% { transform: rotate(1.5deg); }
+    75% { transform: rotate(-1deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  /* ---- Full-screen flash ---- */
+  .flash-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+  }
+  .flash-overlay.flash-right { background: rgba(30, 107, 30, 0.25); animation: flashFade 0.4s ease; }
+  .flash-overlay.flash-wrong { background: rgba(163, 35, 26, 0.22); animation: flashFade 0.4s ease; }
+  @keyframes flashFade { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+  /* ---- Confetti ---- */
+  .confetti-piece {
+    position: fixed;
+    top: -20px;
+    width: 9px;
+    height: 14px;
+    z-index: 60;
+    pointer-events: none;
+    animation: confettiFall linear forwards;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(105vh) rotate(600deg); opacity: 0.9; }
+  }
+
+  /* ---- Correct option pop ---- */
+  .opt.correct { animation: correctPop 0.35s ease; }
+  @keyframes correctPop { 0% { transform: scale(1); } 40% { transform: scale(1.035); } 100% { transform: scale(1); } }
+
+  /* ---- Final screen stars ---- */
+  .star-row { font-size: 2rem; margin: 6px 0 4px; }
+  .star-row span {
+    display: inline-block;
+    opacity: 0;
+    transform: scale(0.3);
+    animation: starPop 0.4s ease forwards;
+  }
+  @keyframes starPop { to { opacity: 1; transform: scale(1); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .particle, .shake, .villain, .confetti-piece, .flash-overlay, .opt.correct, .star-row span {
+      animation: none !important;
+    }
+  }
 </style>
 </head>
 <body>
+<div class="particles" id="particles" aria-hidden="true"></div>
 <div class="wrap">
   <header>
     <h1>📐 Blueprint Bandit: A Geometry Caper</h1>
@@ -202,6 +298,77 @@
   let playerName = "";
   let current = 0;
   let score = 0;
+
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- Ambient drifting particles ---- */
+  function spawnParticles() {
+    if (reduceMotion) return;
+    const container = document.getElementById('particles');
+    const emojis = ["📐", "📏", "🔺", "🟦", "📦", "✏️"];
+    const count = 14;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      const left = Math.random() * 100;
+      const duration = 14 + Math.random() * 14;
+      const delay = Math.random() * 20;
+      const size = 1.1 + Math.random() * 1.2;
+      p.style.left = left + "vw";
+      p.style.fontSize = size + "rem";
+      p.style.animationDuration = duration + "s";
+      p.style.animationDelay = "-" + delay + "s";
+      container.appendChild(p);
+    }
+  }
+
+  /* ---- Confetti burst ---- */
+  function launchConfetti() {
+    if (reduceMotion) return;
+    const colors = ["#BF5700", "#003087", "#1e6b1e", "#f2c14e", "#5b7fd6"];
+    const pieces = 40;
+    for (let i = 0; i < pieces; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left = (Math.random() * 100) + "vw";
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.animationDuration = (1.4 + Math.random() * 1.2) + "s";
+      el.style.borderRadius = Math.random() > 0.5 ? "50%" : "2px";
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
+  }
+
+  /* ---- Screen shake ---- */
+  function shakeScreen() {
+    if (reduceMotion) return;
+    gameCard.classList.remove('shake');
+    void gameCard.offsetWidth;
+    gameCard.classList.add('shake');
+  }
+
+  /* ---- Full-screen flash ---- */
+  function flashScreen(kind) {
+    if (reduceMotion) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'flash-overlay ' + (kind === 'right' ? 'flash-right' : 'flash-wrong');
+    document.body.appendChild(overlay);
+    overlay.addEventListener('animationend', () => overlay.remove());
+  }
+
+  /* ---- Score count-up ---- */
+  function animateCountUp(el, target, duration) {
+    if (reduceMotion) { el.textContent = target; return; }
+    const start = performance.now();
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      el.textContent = Math.round(progress * target);
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = target;
+    }
+    requestAnimationFrame(step);
+  }
 
   const scenes = [
     {
@@ -498,9 +665,13 @@
       score++;
       feedback.textContent = scene.correctFeedback;
       feedback.className = 'feedback show right';
+      flashScreen('right');
+      launchConfetti();
     } else {
       feedback.textContent = scene.wrongFeedback;
       feedback.className = 'feedback show wrong';
+      flashScreen('wrong');
+      shakeScreen();
     }
     liveRegion.textContent = feedback.textContent;
 
@@ -532,13 +703,22 @@
       message = `The fort is built, ${playerName}, but a few formulas slipped through. Run it back and out-smart Leslie for good.`;
     }
 
+    const starCount = 5;
+    const filled = Math.round((score / scoredQuestions) * starCount);
+    let starsHtml = "";
+    for (let i = 0; i < starCount; i++) {
+      const delay = (i * 0.12).toFixed(2);
+      starsHtml += `<span style="animation-delay:${delay}s">${i < filled ? "⭐" : "☆"}</span>`;
+    }
+
     gameCard.innerHTML = "";
     const wrap = document.createElement('div');
     wrap.className = 'final-card';
     wrap.innerHTML = `
       <div class="scene-img" aria-hidden="true">🏆</div>
       <h2>Caper Complete!</h2>
-      <div class="score-display">${score} / ${scoredQuestions}</div>
+      <div class="star-row" aria-hidden="true">${starsHtml}</div>
+      <div class="score-display" id="scoreDisplay">0 / ${scoredQuestions}</div>
       <p class="line">${message}</p>
       <div class="moral">Moral: Every shape has its own formula — check which one before Leslie checks your work for you.</div>
     `;
@@ -552,9 +732,26 @@
     wrap.appendChild(restartBtn);
     gameCard.appendChild(wrap);
 
+    if (score === scoredQuestions) launchConfetti();
+
+    const scoreEl = document.getElementById('scoreDisplay');
+    const start = performance.now();
+    if (reduceMotion) {
+      scoreEl.textContent = `${score} / ${scoredQuestions}`;
+    } else {
+      function stepScore(now) {
+        const progress = Math.min((now - start) / 900, 1);
+        scoreEl.textContent = `${Math.round(progress * score)} / ${scoredQuestions}`;
+        if (progress < 1) requestAnimationFrame(stepScore);
+        else scoreEl.textContent = `${score} / ${scoredQuestions}`;
+      }
+      requestAnimationFrame(stepScore);
+    }
+
     liveRegion.textContent = `Caper complete. Final score ${score} out of ${scoredQuestions}. ${message}`;
   }
 
+  spawnParticles();
   renderNameScreen();
 })();
 </script>
