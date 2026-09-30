@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chompbot: The Number Grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1c4d; --board:#16307a; --cell-line:#2c4db0; --gold:#ffe066;
+    --bot:#ff8c2e; --glitch:#e04bd6; --ink:#f3f5ff; --muted:#aab6e8; --good:#7be495; --bad:#ff6b7d;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; background:var(--bg); color:var(--ink);
+    font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+    display:flex; justify-content:center; padding:16px 12px 32px;
+  }
+  .wrap{width:100%; max-width:760px}
+  header{display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:10px}
+  h1{font-family:VT323,monospace; font-weight:400; font-size:clamp(2.4rem,7vw,3.4rem); line-height:.9; margin:0; color:var(--bot); text-shadow:3px 3px 0 #5a1f00}
+  h1 small{display:block; font-size:.5em; color:var(--gold); text-shadow:none}
+  .setup{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .setup label{color:var(--muted)}
+  select,button{font:inherit; color:var(--ink); background:#1d3a8f; border:2px solid #3558c4; border-radius:6px; padding:6px 12px; cursor:pointer}
+  button:hover,select:hover{border-color:var(--gold)}
+  :focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+
+  .rule{
+    font-family:VT323,monospace; font-size:clamp(1.8rem,6vw,2.8rem); line-height:1; margin:6px 0 8px;
+    color:var(--gold); text-align:center; min-height:1em;
+  }
+  .rule span{color:var(--ink)}
+  .stats{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:1.05rem; margin-bottom:8px}
+  .stats b{font-family:VT323,monospace; font-size:1.6rem; font-weight:400; color:var(--gold); vertical-align:-2px}
+  .lives{display:inline-flex; gap:3px; vertical-align:middle}
+  .lives svg{width:22px; height:22px}
+
+  .boardwrap{position:relative}
+  .board{
+    position:relative; display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:repeat(5,1fr);
+    aspect-ratio:6/5; background:var(--board); border:4px solid var(--gold); border-radius:10px; overflow:hidden;
+    user-select:none; touch-action:manipulation;
+  }
+  .cell{
+    display:grid; place-items:center; border:1px solid var(--cell-line); cursor:pointer;
+    font-family:VT323,monospace; font-size:clamp(1.4rem,5vw,2.6rem); color:var(--gold); line-height:1;
+  }
+  .cell.long{font-size:clamp(1rem,3.4vw,1.8rem)}
+  .cell.here{align-items:start; padding-top:4%; background:#1f3f99}
+  .cell.flicker{animation:flicker .5s steps(2) 2}
+  @keyframes flicker{50%{color:var(--glitch)}}
+  .sprite{
+    position:absolute; width:calc(100% / 6); height:calc(100% / 5); pointer-events:none;
+    display:flex; justify-content:center; align-items:flex-end; padding-bottom:4%;
+    transition:left .12s linear, top .12s linear;
+  }
+  .sprite svg{height:58%; width:auto; overflow:visible}
+  .bot .mouth{transition:height .08s, y .08s}
+  .bot.chomp .mouth{height:9px; y:22px}
+  .bot.hurt svg{animation:hurt .15s 6}
+  @keyframes hurt{50%{opacity:.2}}
+  .enemy.arriving svg{animation:arrive .3s steps(2) infinite}
+  @keyframes arrive{50%{opacity:.15}}
+
+  .toast{min-height:1.6em; margin-top:8px; text-align:center; font-size:1.05rem}
+  .toast.good{color:var(--good)} .toast.bad{color:var(--bad)}
+
+  .panel{
+    position:absolute; inset:0; display:none; place-items:center; background:rgba(8,14,40,.82); border-radius:10px; padding:12px;
+  }
+  .panel.show{display:grid}
+  .card{background:#1a2f78; border:3px solid var(--gold); border-radius:10px; padding:20px 24px; max-width:520px; text-align:center}
+  .card h2{font-family:VT323,monospace; font-weight:400; font-size:clamp(2rem,6vw,2.8rem); line-height:1; margin:0 0 10px; color:var(--gold)}
+  .card p{margin:0 0 14px; line-height:1.5; font-size:1.05rem}
+  .card .math{font-family:VT323,monospace; font-size:1.7rem; color:var(--good); display:block; margin-top:6px}
+  .card button{font-size:1.1rem; padding:8px 22px; background:var(--bot); border-color:#ffb36b; color:#2a0f00; font-weight:700}
+
+  .pad{display:none; margin-top:12px; grid-template-columns:repeat(3,64px); grid-template-rows:repeat(2,56px); gap:6px; justify-content:center}
+  .pad button{font-size:1.4rem; padding:0}
+  .pad .eat{grid-column:4; grid-row:1 / 3; width:90px; margin-left:12px; background:var(--bot); color:#2a0f00; font-weight:700; font-size:1.1rem}
+  @media (hover:none), (max-width:640px){ .pad{display:grid; grid-template-columns:repeat(3,56px) 100px} }
+  .help{color:var(--muted); font-size:.92rem; line-height:1.55; margin:12px 2px 0}
+  kbd{font-family:inherit; background:#1d3a8f; border:1px solid #3558c4; border-radius:4px; padding:0 5px}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Chompbot<small>The Number Grid</small></h1>
+    <div class="setup">
+      <label for="diff">Level of play</label>
+      <select id="diff">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+      <button type="button" id="newGame">New game</button>
+    </div>
+  </header>
+
+  <div class="rule" id="rule" aria-live="polite">&nbsp;</div>
+  <div class="stats">
+    <div>Score <b id="score">0</b></div>
+    <div>Level <b id="level">1</b><span style="color:var(--muted)"> of 8</span></div>
+    <div>Left to eat <b id="left">0</b></div>
+    <div>Lives <span class="lives" id="lives"></span></div>
+  </div>
+
+  <div class="boardwrap">
+    <div class="board" id="board" role="grid" aria-label="Number grid"></div>
+    <div class="panel" id="panel">
+      <div class="card" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+        <h2 id="panelTitle">Chompbot</h2>
+        <p id="panelBody"></p>
+        <button type="button" id="panelBtn">Start</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast" aria-live="polite"></div>
+
+  <div class="pad" aria-label="Touch controls">
+    <button type="button" data-move="0,-1" style="grid-column:2;grid-row:1" aria-label="Up">▲</button>
+    <button type="button" data-move="-1,0" style="grid-column:1;grid-row:2" aria-label="Left">◀</button>
+    <button type="button" data-move="0,1" style="grid-column:2;grid-row:2" aria-label="Down">▼</button>
+    <button type="button" data-move="1,0" style="grid-column:3;grid-row:2" aria-label="Right">▶</button>
+    <button type="button" class="eat" id="eatBtn">Eat</button>
+  </div>
+
+  <p class="help">
+    Move Chompbot around the grid and eat every number that fits the rule. Eat a wrong one and you lose a life,
+    but you'll see the math that shows why. Watch out for glitches that wander in from the edges and scramble empty squares.
+    Clear all 8 levels to win. Keyboard: <kbd>arrow keys</kbd> or <kbd>WASD</kbd> to move, <kbd>Space</kbd> to eat,
+    <kbd>P</kbd> to pause. You can also tap a square to step toward it, and tap your own square to eat.
+  </p>
+</div>
+
+<script>
+(() => {
+  const COLS = 6, ROWS = 5, TOTAL_LEVELS = 8;
+  const $ = id => document.getElementById(id);
+  const board = $('board');
+  const R = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+  const pick = arr => arr[R(0, arr.length-1)];
+  const isPrime = n => { if(n<2) return false; for(let i=2;i*i<=n;i++) if(n%i===0) return false; return true; };
+  const gcd = (a,b) => b ? gcd(b, a%b) : a;
+
+  // ---------- rules ----------
+  const RULES = {
+    multiples(k, max){
+      return { key:'mult', title:`Multiples of ${k}`, make(ok){
+        let n;
+        if(ok) n = k*R(1, Math.floor(max/k));
+        else do { n = R(2,max); } while(n%k===0);
+        const g = n%k===0;
+        return {label:String(n), ok:g, why: g ? `${n} = ${k} × ${n/k}` : `${n} ÷ ${k} = ${Math.floor(n/k)} R ${n%k}`};
+      }};
+    },
+    factors(N){
+      const divs = []; for(let i=1;i<=N;i++) if(N%i===0) divs.push(i);
+      return { key:'fact', title:`Factors of ${N}`, make(ok){
+        let n;
+        if(ok) n = pick(divs);
+        else do { n = R(2,N); } while(N%n===0);
+        const g = N%n===0;
+        return {label:String(n), ok:g, why: g ? `${N} = ${n} × ${N/n}` : `${N} ÷ ${n} = ${Math.floor(N/n)} R ${N%n}`};
+      }};
+    },
+    primes(max){
+      return { key:'prime', title:`Prime numbers`, make(ok){
+        let n;
+        if(ok) do { n = R(2,max); } while(!isPrime(n));
+        else do { n = R(1,max); } while(isPrime(n));
+        let why;
+        if(isPrime(n)) why = `${n} has exactly two factors: 1 and ${n}`;
+        else if(n===1) why = `1 has only one factor, so it isn't prime`;
+        else { let f=2; while(n%f) f++; why = `${n} = ${f} × ${n/f}`; }
+        return {label:String(n), ok:isPrime(n), why};
+      }};
+    },
+    squares(max){
+      return { key:'sq', title:`Perfect squares`, make(ok){
+        let n;
+        if(ok){ const r = R(1, Math.floor(Math.sqrt(max))); n = r*r; }
+        else do { n = R(2,max); } while(Number.isInteger(Math.sqrt(n)));
+        const r = Math.sqrt(n), g = Number.isInteger(r), f = Math.floor(r);
+        return {label:String(n), ok:g, why: g ? `${n} = ${r} × ${r}` : `${n} is between ${f}² = ${f*f} and ${f+1}² = ${(f+1)**2}`};
+      }};
+    },
+    parity(even, max){
+      return { key:'par', title: even ? 'Even numbers' : 'Odd numbers', make(ok){
+        let n; const wantEven = ok ? even : !even;
+        do { n = R(1,max); } while((n%2===0) !== wantEven);
+        const isEven = n%2===0;
+        return {label:String(n), ok:isEven===even, why: isEven ? `${n} = 2 × ${n/2}` : `${n} = 2 × ${(n-1)/2} + 1`};
+      }};
+    },
+    equals(N, ops){
+      return { key:'eq', title:`Equal to ${N}`, make(ok){
+        let v = N;
+        if(!ok){ do { v = N + (Math.random()<.5?-1:1)*R(1,4); } while(v<1); }
+        let op = pick(ops), label;
+        const divs = []; for(let d=2; d<v; d++) if(v%d===0) divs.push(d);
+        if(op==='×' && !divs.length) op = '+';
+        if(op==='+'){ const a=R(0,v); label = `${a} + ${v-a}`; }
+        else if(op==='−'){ const b=R(1,12); label = `${v+b} − ${b}`; }
+        else if(op==='×'){ const a=pick(divs); label = `${a} × ${v/a}`; }
+        else { const b=R(2,9); label = `${v*b} ÷ ${b}`; }
+        return {label, ok:v===N, why:`${label} = ${v}`};
+      }};
+    },
+    fractions(tn, td){
+      return { key:'frac', title:`Equal to ${tn}/${td}`, make(ok){
+        let a, b;
+        if(ok){ const m=R(2,8); a=tn*m; b=td*m; }
+        else do { b=R(3,18); a=R(1,b-1); } while(a*td===b*tn);
+        const g = gcd(a,b), good = a*td===b*tn;
+        const why = g>1 ? `${a}/${b} = ${a/g}/${b/g} (divide top and bottom by ${g})` : `${a}/${b} is already in lowest terms`;
+        return {label:`${a}/${b}`, ok:good, why};
+      }};
+    }
+  };
+
+  const POOLS = {
+    easy: [
+      () => RULES.multiples(R(2,5), 50),
+      () => RULES.parity(Math.random()<.5, 40),
+      () => RULES.factors(pick([12,16,18,20,24])),
+      () => RULES.equals(R(8,15), ['+','−'])
+    ],
+    medium: [
+      () => RULES.multiples(R(3,9), 90),
+      () => RULES.factors(pick([24,30,36,40,48,60])),
+      () => RULES.primes(50),
+      () => RULES.equals(R(12,30), ['+','−','×']),
+      () => RULES.squares(100)
+    ],
+    hard: [
+      () => RULES.multiples(R(6,12), 144),
+      () => RULES.factors(pick([48,60,72,84,90,96,100])),
+      () => RULES.primes(100),
+      () => RULES.squares(225),
+      () => RULES.equals(R(18,48), ['+','−','×','÷']),
+      () => RULES.fractions(...pick([[1,2],[1,3],[2,3],[3,4],[2,5]]))
+    ]
+  };
+
+  // ---------- state ----------
+  let cells = [], cellEls = [], rule = null, lastKey = '';
+  let player = {c:2, r:2}, enemies = [];
+  let score = 0, lives = 3, level = 1, diff = 'medium';
+  let running = false, panelOpen = false, panelAt = 0, panelAction = null;
+  let invulnUntil = 0, nextSpawn = 0;
+
+  const botEl = document.createElement('div');
+  botEl.className = 'sprite bot';
+  botEl.innerHTML = `<svg viewBox="0 0 40 40" aria-hidden="true">
+    <line x1="20" y1="3" x2="20" y2="10" stroke="#7a3500" stroke-width="2"/>
+    <circle cx="20" cy="3" r="3" fill="#ffe066"/>
+    <rect x="5" y="10" width="30" height="27" rx="7" fill="#ff8c2e" stroke="#7a3500" stroke-width="2"/>
+    <circle cx="14" cy="19" r="4" fill="#fff"/><circle cx="26" cy="19" r="4" fill="#fff"/>
+    <circle cx="15" cy="20" r="2" fill="#1a1a1a"/><circle cx="27" cy="20" r="2" fill="#1a1a1a"/>
+    <rect class="mouth" x="12" y="27" width="16" height="4" rx="1.5" fill="#5a1f00"/>
+  </svg>`;
+
+  function enemySVG(){
+    return `<svg viewBox="0 0 40 40" aria-hidden="true">
+      <polygon points="20,2 26,8 34,6 32,14 38,20 32,26 34,34 26,32 20,38 14,32 6,34 8,26 2,20 8,14 6,6 14,8"
+        fill="#e04bd6" stroke="#5c0f57" stroke-width="2"/>
+      <path d="M11 15 L18 18 M29 15 L22 18" stroke="#2a0628" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="15" cy="21" r="2.6" fill="#fff"/><circle cx="25" cy="21" r="2.6" fill="#fff"/>
+      <path d="M13 29 L16 26 L19 29 L22 26 L25 29 L28 26" stroke="#2a0628" stroke-width="2" fill="none"/>
+    </svg>`;
+  }
+
+  // ---------- board ----------
+  function buildBoardDOM(){
+    board.innerHTML = '';
+    cellEls = [];
+    for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++){
+      const el = document.createElement('div');
+      el.className = 'cell'; el.setAttribute('role','gridcell');
+      el.addEventListener('click', () => tapCell(c, r));
+      board.appendChild(el); cellEls.push(el);
+    }
+    board.appendChild(botEl);
+  }
+  const idx = (c,r) => r*COLS + c;
+
+  function fillGrid(){
+    const n = COLS*ROWS, want = R(9,13);
+    const flags = Array.from({length:n}, (_,i) => i < want);
+    for(let i=n-1; i>0; i--){ const j=R(0,i); [flags[i],flags[j]] = [flags[j],flags[i]]; }
+    cells = flags.map(f => rule.make(f));
+    if(!cells.some(x => x.ok)) cells[0] = rule.make(true);
+  }
+  function renderCell(i){
+    const el = cellEls[i], item = cells[i];
+    el.textContent = item ? item.label : '';
+    el.classList.toggle('long', !!item && item.label.length > 4);
+    el.setAttribute('aria-label', item ? item.label : 'empty');
+  }
+  function renderAll(){
+    for(let i=0;i<cells.length;i++) renderCell(i);
+    updateHere(); updateStats();
+  }
+  function place(el, c, r){
+    el.style.left = (c*100/COLS) + '%';
+    el.style.top = (r*100/ROWS) + '%';
+  }
+  function updateHere(){
+    cellEls.forEach((el,i) => el.classList.toggle('here', i === idx(player.c, player.r)));
+    place(botEl, player.c, player.r);
+  }
+  function remaining(){ return cells.filter(x => x && x.ok).length; }
+  function updateStats(){
+    $('score').textContent = score;
+    $('level').textContent = level;
+    $('left').textContent = remaining();
+    const lv = $('lives'); lv.innerHTML = '';
+    for(let i=0;i<lives;i++) lv.insertAdjacentHTML('beforeend',
+      `<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="5" y="8" width="30" height="27" rx="7" fill="#ff8c2e" stroke="#7a3500" stroke-width="3"/><circle cx="14" cy="18" r="4" fill="#fff"/><circle cx="26" cy="18" r="4" fill="#fff"/></svg>`);
+    lv.setAttribute('aria-label', `${lives} lives`);
+  }
+  function toast(txt, kind=''){
+    const t = $('toast'); t.textContent = txt; t.className = 'toast ' + kind;
+  }
+
+  // ---------- panel ----------
+  function showPanel(title, bodyHTML, btn, action){
+    $('panelTitle').textContent = title;
+    $('panelBody').innerHTML = bodyHTML;
+    $('panelBtn').textContent = btn;
+    panelAction = action; panelOpen = true; panelAt = performance.now();
+    $('panel').classList.add('show');
+    setTimeout(() => $('panelBtn').focus(), 250);
+  }
+  $('panelBtn').addEventListener('click', () => {
+    if(performance.now() - panelAt < 350) return;
+    $('panel').classList.remove('show'); panelOpen = false;
+    const a = panelAction; panelAction = null;
+    if(a) a();
+  });
+
+  // ---------- game flow ----------
+  function newGame(){
+    diff = $('diff').value;
+    score = 0; lives = 3; level = 1; lastKey = '';
+    running = false;
+    startLevel(true);
+  }
+  function chooseRule(){
+    let r, tries = 0;
+    do { r = pick(POOLS[diff])(); } while(r.key === lastKey && tries++ < 10);
+    lastKey = r.key; return r;
+  }
+  function startLevel(first){
+    rule = chooseRule();
+    clearEnemies();
+    player = {c:2, r:2};
+    fillGrid(); renderAll();
+    $('rule').innerHTML = `<span>Eat:</span> ${rule.title}`;
+    toast('');
+    running = false;
+    const intro = first
+      ? `Eat every number that fits the rule. Wrong bites cost a life, and glitches wander in from the edges.<br><br>Level 1 rule: <b>${rule.title}</b>`
+      : `New rule: <b>${rule.title}</b>`;
+    showPanel(first ? 'Ready, Chompbot?' : `Level ${level}`, intro, 'Start', () => {
+      running = true;
+      nextSpawn = performance.now() + spawnDelay();
+      invulnUntil = 0;
+    });
+  }
+  const spawnDelay = () => Math.max(3500, 9000 - level*600) * (diff==='easy' ? 1.3 : 1);
+  const stepMs = () => Math.max(420, 1150 - level*80) * (diff==='easy' ? 1.25 : diff==='hard' ? 0.85 : 1);
+  const maxEnemies = () => Math.min(3, 1 + Math.floor((level-1)/3) + (diff==='hard' ? 1 : 0));
+
+  function move(dc, dr){
+    if(!running || panelOpen) return;
+    const c = player.c + dc, r = player.r + dr;
+    if(c<0 || c>=COLS || r<0 || r>=ROWS) return;
+    player = {c, r};
+    updateHere();
+    const item = cells[idx(c,r)];
+    toast(item ? `Standing on ${item.label}` : '');
+    checkCollisions();
+  }
+  function tapCell(c, r){
+    if(!running || panelOpen) return;
+    if(c === player.c && r === player.r){ eat(); return; }
+    const dc = c - player.c, dr = r - player.r;
+    if(Math.abs(dc) >= Math.abs(dr)) move(Math.sign(dc), 0); else move(0, Math.sign(dr));
+  }
+  function eat(){
+    if(!running || panelOpen) return;
+    const i = idx(player.c, player.r), item = cells[i];
+    botEl.classList.add('chomp'); setTimeout(() => botEl.classList.remove('chomp'), 160);
+    if(!item) return;
+    cells[i] = null; renderCell(i);
+    if(item.ok){
+      score += 10;
+      toast(`Yum! ${item.why}`, 'good');
+      updateStats();
+      if(remaining() === 0) levelCleared();
+    } else {
+      updateStats();
+      loseLife(`<b>${item.label}</b> doesn't fit the rule “${rule.title}.”<span class="math">${item.why}</span>`);
+    }
+  }
+  function levelCleared(){
+    running = false;
+    const bonus = 50*level;
+    score += bonus;
+    let extra = '';
+    if(level % 3 === 0 && lives < 5){ lives++; extra = '<br>You earned an extra life!'; }
+    updateStats();
+    clearEnemies();
+    if(level >= TOTAL_LEVELS){
+      showPanel('You win!', `Chompbot cleared all ${TOTAL_LEVELS} levels on ${diff}.<br>Final score: <b>${score}</b>`, 'Play again', newGame);
+      return;
+    }
+    showPanel(`Level ${level} cleared`, `Bonus +${bonus}.${extra}`, 'Next level', () => { level++; startLevel(false); });
+  }
+  function loseLife(html){
+    running = false;
+    lives--;
+    updateStats();
+    botEl.classList.add('hurt'); setTimeout(() => botEl.classList.remove('hurt'), 900);
+    clearEnemies();
+    if(lives <= 0){
+      showPanel('Game over', `${html}<br><br>You reached level ${level} with <b>${score}</b> points.`, 'Play again', newGame);
+      return;
+    }
+    showPanel('Oops!', html, 'Keep going', () => {
+      player = {c:2, r:2}; updateHere();
+      running = true;
+      invulnUntil = performance.now() + 1200;
+      nextSpawn = performance.now() + spawnDelay();
+    });
+  }
+
+  // ---------- glitches ----------
+  function clearEnemies(){ enemies.forEach(e => e.el.remove()); enemies = []; }
+  function spawnEnemy(now){
+    const edges = [];
+    for(let c=0;c<COLS;c++){ edges.push([c,0]); edges.push([c,ROWS-1]); }
+    for(let r=1;r<ROWS-1;r++){ edges.push([0,r]); edges.push([COLS-1,r]); }
+    const far = edges.filter(([c,r]) => Math.abs(c-player.c)+Math.abs(r-player.r) >= 3 && !enemies.some(e => e.c===c && e.r===r));
+    if(!far.length) return;
+    const [c,r] = pick(far);
+    const el = document.createElement('div');
+    el.className = 'sprite enemy arriving'; el.innerHTML = enemySVG();
+    board.appendChild(el); place(el, c, r);
+    enemies.push({c, r, el, activeAt: now + 1000, nextMove: now + 1000 + stepMs()});
+    toast('A glitch is coming in!', 'bad');
+  }
+  function moveEnemy(e){
+    const opts = [[1,0],[-1,0],[0,1],[0,-1]].filter(([dc,dr]) => {
+      const c=e.c+dc, r=e.r+dr; return c>=0 && c<COLS && r>=0 && r<ROWS;
+    });
+    let d;
+    if(Math.random() < 0.6){
+      const dx = player.c - e.c, dy = player.r - e.r;
+      d = Math.abs(dx) >= Math.abs(dy) ? [Math.sign(dx), 0] : [0, Math.sign(dy)];
+      if(d[0]===0 && d[1]===0) d = pick(opts);
+    } else d = pick(opts);
+    e.c += d[0]; e.r += d[1];
+    place(e.el, e.c, e.r);
+    const i = idx(e.c, e.r);
+    if(!cells[i] && Math.random() < 0.3){
+      cells[i] = rule.make(Math.random() < 0.4);
+      renderCell(i); updateStats();
+      cellEls[i].classList.remove('flicker'); void cellEls[i].offsetWidth; cellEls[i].classList.add('flicker');
+    }
+  }
+  function checkCollisions(){
+    const now = performance.now();
+    if(!running || now < invulnUntil) return;
+    if(enemies.some(e => now >= e.activeAt && e.c===player.c && e.r===player.r)){
+      loseLife('A glitch caught Chompbot. Keep an eye on the edges of the grid.');
+    }
+  }
+  function loop(now){
+    if(running && !panelOpen){
+      if(enemies.length < maxEnemies() && now >= nextSpawn){
+        spawnEnemy(now);
+        nextSpawn = now + spawnDelay();
+      }
+      for(const e of enemies){
+        if(now >= e.activeAt) e.el.classList.remove('arriving');
+        if(now >= e.nextMove){ moveEnemy(e); e.nextMove = now + stepMs(); }
+      }
+      checkCollisions();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- input ----------
+  window.addEventListener('keydown', e => {
+    if(e.target.tagName === 'SELECT') return;
+    if(panelOpen) return;
+    const k = e.key.toLowerCase();
+    const moves = {arrowup:[0,-1], w:[0,-1], arrowdown:[0,1], s:[0,1], arrowleft:[-1,0], a:[-1,0], arrowright:[1,0], d:[1,0]};
+    if(moves[k]){ e.preventDefault(); move(...moves[k]); }
+    else if(k === ' ' || k === 'enter'){
+      if(e.target.tagName === 'BUTTON') return;
+      e.preventDefault(); eat();
+    }
+    else if(k === 'p' && running){
+      running = false;
+      showPanel('Paused', `Rule: <b>${rule.title}</b>`, 'Resume', () => {
+        running = true;
+        const now = performance.now();
+        enemies.forEach(en => en.nextMove = now + stepMs());
+        nextSpawn = Math.max(nextSpawn, now + 2000);
+      });
+    }
+  });
+  document.querySelectorAll('[data-move]').forEach(b => {
+    b.addEventListener('pointerdown', ev => { ev.preventDefault(); move(...b.dataset.move.split(',').map(Number)); });
+  });
+  $('eatBtn').addEventListener('pointerdown', ev => { ev.preventDefault(); eat(); });
+  $('newGame').addEventListener('click', newGame);
+  $('diff').addEventListener('change', newGame);
+
+  buildBoardDOM();
+  newGame();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
